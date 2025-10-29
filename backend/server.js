@@ -22,7 +22,7 @@ connectDB()
 
 // app.use(cors());
 app.use(cors({
-  origin: "http://localhost:5173", // only allow your Vite app
+  origin: "https://mock-e-com-cart-frontend.onrender.com", // only allow your Vite app
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
