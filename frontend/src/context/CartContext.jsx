@@ -8,7 +8,7 @@ export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [receipt, setReceipt] = useState(null);
 
-  const API_BASE = "https://mock-e-com-cart-backend.onrender.com";
+  const API_BASE = "https://mock-e-com-cart-backend.onrender.com/api";
 
   useEffect(() => {
     fetchProducts();
