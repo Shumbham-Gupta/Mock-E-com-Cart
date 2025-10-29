@@ -75,7 +75,7 @@ export default function Footer() {
       {activeModal === "contact" && (
         <Modal
           title="Contact Us"
-          content="Have questions or feedback? Reach us anytime at support@vibecommerce.com or through our help center on the Contact page."
+          content="Have questions or feedback? Reach us anytime at shubham959gupta@gmail.com or through our help center on the Contact page."
         />
       )}
     </>
