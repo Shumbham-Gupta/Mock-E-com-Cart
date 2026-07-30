@@ -22,13 +22,21 @@ connectDB()
   })
   .catch((err) => console.error("MongoDB Connection Error:", err));
 
-// Allow the Vite dev server on ANY localhost port. Vite auto-bumps the port
-// (5173 → 5174 → …) when one is busy, and a hardcoded origin then silently
-// fails CORS — which shows up in the UI as "failed to add item".
+// Allow the deployed frontend AND any localhost port in dev. Vite auto-bumps
+// the port (5173 → 5174 → …) when one is busy, and a hardcoded origin then
+// silently fails CORS — which shows up in the UI as "failed to add item".
+const allowedOrigins = [
+  "https://mock-e-com-cart-frontend.onrender.com",
+];
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow non-browser tools (curl/Postman) that send no Origin header.
-    if (!origin || /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) {
+    // Allow non-browser tools (curl/Postman) that send no Origin header,
+    // any localhost/127.0.0.1 port, and the deployed frontend.
+    if (
+      !origin ||
+      /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin) ||
+      allowedOrigins.includes(origin)
+    ) {
       return callback(null, true);
     }
     return callback(new Error(`Origin not allowed by CORS: ${origin}`));
