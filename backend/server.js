@@ -15,14 +15,24 @@ const PORT = process.env.PORT || 4000;
 // ✅ Connect to MongoDB
 connectDB()
   .then(async () => {
-    // 🔁 Force reseed if needed (set true to refresh all products)
-    await seedProductsIfNeeded(true);
+    // Seed products only when the collection is empty. Passing `true` here
+    // deleted + reinserted all products on every restart, regenerating their
+    // _ids and orphaning any cart items that referenced the old ids.
+    await seedProductsIfNeeded(false);
   })
   .catch((err) => console.error("MongoDB Connection Error:", err));
 
-// app.use(cors());
+// Allow the Vite dev server on ANY localhost port. Vite auto-bumps the port
+// (5173 → 5174 → …) when one is busy, and a hardcoded origin then silently
+// fails CORS — which shows up in the UI as "failed to add item".
 app.use(cors({
-  origin: "http://localhost:5173", // only allow your Vite app
+  origin: (origin, callback) => {
+    // Allow non-browser tools (curl/Postman) that send no Origin header.
+    if (!origin || /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`Origin not allowed by CORS: ${origin}`));
+  },
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));

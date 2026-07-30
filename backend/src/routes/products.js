@@ -44,8 +44,8 @@ async function seedProductsIfNeeded(force = false) {
   }
 }
 
-// ✅ Automatically seed once
-seedProductsIfNeeded().catch((err) => console.error("Seed error:", err));
+// Seeding is triggered once from server.js after the DB connects.
+// (A duplicate import-time seed call used to run here.)
 
 // ✅ GET /api/products
 router.get("/", async (req, res) => {

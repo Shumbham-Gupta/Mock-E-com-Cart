@@ -28,8 +28,8 @@ export const CartProvider = ({ children }) => {
 
 const addToCart = async (productId) => {
   try {
-    await axios.post(`${API_BASE}/cart`, { productId, qty: 1 });
-    fetchCart();
+    const { data } = await axios.post(`${API_BASE}/cart`, { productId, qty: 1 });
+    setCart(data.cartItems);
     toast.success("🛍️ Item added to cart!");
   } catch (err) {
     toast.error("❌ Failed to add item!");
@@ -40,8 +40,18 @@ const addToCart = async (productId) => {
 
 
   const removeFromCart = async (id) => {
-    await axios.delete(`${API_BASE}/cart/${id}`);
-    fetchCart();
+    const { data } = await axios.delete(`${API_BASE}/cart/${id}`);
+    setCart(data.cartItems);
+  };
+
+  const updateQty = async (id, qty) => {
+    try {
+      const { data } = await axios.put(`${API_BASE}/cart/${id}`, { qty });
+      setCart(data.cartItems);
+    } catch (err) {
+      toast.error("❌ Failed to update quantity!");
+      console.error(err);
+    }
   };
 
   const checkout = async (formData) => {
@@ -49,15 +59,15 @@ const addToCart = async (productId) => {
       cartItems: cart,
       user: formData,
     });
-    setReceipt(data);
-    fetchCart();
+    setReceipt(data.receipt);
+    setCart([]);
   };
 
    const cartCount = cart?.length || 0; //new line added
 
   return (
     <CartContext.Provider value={{
-      products, cart, addToCart, removeFromCart, checkout, receipt, setReceipt,cartCount //newone
+      products, cart, addToCart, removeFromCart, updateQty, checkout, receipt, setReceipt, cartCount
     }}>
       {children}
     </CartContext.Provider>

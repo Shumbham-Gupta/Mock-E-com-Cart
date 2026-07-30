@@ -5,24 +5,28 @@ const { v4: uuidv4 } = require('uuid');
 const CartItem = require('../models/CartItem');
 const Product = require('../models/Product');
 
+// Single source of truth for the cart response shape.
+// Every endpoint returns { cartItems, total } with the nested product shape
+// the frontend expects (item.product.name / item.product.price).
+async function getCart() {
+  const items = await CartItem.find({}).lean();
+  const total = items.reduce((sum, it) => sum + it.price * it.qty, 0);
+  const cartItems = items.map(it => ({
+    _id: it._id,
+    product: {
+      _id: it.productId,
+      name: it.name,
+      price: it.price,
+    },
+    qty: it.qty,
+  }));
+  return { cartItems, total: Number(total.toFixed(2)) };
+}
+
 // 🛒 GET /api/cart — return cart items + total
 router.get('/', async (req, res) => {
   try {
-    const items = await CartItem.find({}).lean();
-    if (!items) return res.json({ cartItems: [], total: 0 });
-
-    const total = items.reduce((sum, it) => sum + (it.price * it.qty), 0);
-    const cartItems = items.map(it => ({
-      _id: it._id,
-      product: {
-        _id: it.productId,
-        name: it.name,
-        price: it.price
-      },
-      qty: it.qty
-    }));
-
-    res.json({ cartItems, total });
+    res.json(await getCart());
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -63,8 +67,37 @@ router.post('/', async (req, res) => {
       await newItem.save();
     }
 
-    const updatedCart = await CartItem.find({});
-    res.json({ cartItems: updatedCart });
+    res.json(await getCart());
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 🔁 PUT /api/cart/:id — set an item's absolute quantity.
+// qty <= 0 removes the line (matches how real carts treat "− below 1").
+router.put('/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const qtyNum = Number(req.body.qty);
+
+    if (isNaN(qtyNum)) {
+      return res.status(400).json({ error: 'qty must be a number' });
+    }
+
+    if (qtyNum <= 0) {
+      await CartItem.deleteOne({ _id: id });
+      return res.json(await getCart());
+    }
+
+    const item = await CartItem.findById(id);
+    if (!item) {
+      return res.status(404).json({ error: 'Cart item not found' });
+    }
+
+    item.qty = qtyNum;
+    await item.save();
+    res.json(await getCart());
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -76,8 +109,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const id = req.params.id;
     await CartItem.deleteOne({ _id: id });
-    const updatedCart = await CartItem.find({});
-    res.json({ cartItems: updatedCart });
+    res.json(await getCart());
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
